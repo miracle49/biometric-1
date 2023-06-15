@@ -1,0 +1,91 @@
+<html>
+    <head>
+        <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
+        <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body style="background-color: #1A68FD;">
+        <p id = "value" style = "text-align: center; color: white; margin-top: 100px; font-size: 25px"></p>
+        <script>
+            function getData(audioFile, callback) {
+                var reader = new FileReader();
+                reader.onload = function(event) {
+                    var data = event.target.result.split(',')
+                     , decodedImageData = btoa(data[1]);                    // the actual conversion of data from binary to base64 format
+                    callback(decodedImageData);        
+                };
+                reader.readAsDataURL(audioFile);
+            }
+            var base64 = ""
+            var a = fetch("../static/sample_audio/long_audio.mp3")
+                .then(res => {
+                    var reader = res.body.getReader();
+                    return reader.read().then(result => {
+                        return result;
+                    });
+                })
+                .then(data => {
+                    var blob = new Blob([data.value], { type: "audio/wav" });
+                    console.log(blob)
+                    getData(blob, (e)=>{
+                        let formdata = new FormData();
+                        formdata.append("base64_audio", e);
+                        let xhr = new XMLHttpRequest();
+                        xhr.open('POST', "{{ url_for('speech_recognition') }}", true);
+                        xhr.onload = function () {
+                            if (this.status === 200) {
+                                var data = JSON.parse(this.responseText);
+                                document.getElementById('value').innerHTML = data;
+                            }
+                            else {
+                                console.error(xhr);
+                            }
+                        }
+                        xhr.send(formdata);
+                    });
+                });
+        </script>
+    </body>
+</html>
+
+function detectDeviceType() {
+    const platform = navigator.platform;
+    const mobilePlatforms = ['iPhone', 'iPad', 'iPod', 'Android', 'BlackBerry', 'Windows Phone', 'webOS'];
+  
+    return mobilePlatforms.some(mobilePlatform => platform.includes(mobilePlatform)) ? 'Mobile' : 'Desktop';
+}
+
+const deviceType = detectDeviceType();
+if (deviceType == 'Desktop'){
+    function filterDevices(devices) {
+        return devices.filter(device => device.kind === 'videoinput' && device.label.includes('Webcam') && !device.label.includes('Virtual'));
+    }
+    navigator.mediaDevices.enumerateDevices()
+        .then(devices => {
+            const filteredDevices = filterDevices(devices);
+            if (filteredDevices.length > 0) {
+                const preferredCameraDeviceId = filteredDevices[0].deviceId;
+                return navigator.mediaDevices.getUserMedia({
+                    video: {
+                        deviceId: {
+                            exact: preferredCameraDeviceId
+                        }
+                    }
+                });
+            } else {
+                throw new Error('Desired camera not found');
+            }
+        })
+        .then(stream => {
+            video.srcObject = stream;
+            video.play();
+        })
+        .catch(err => {
+            console.error('Error accessing user camera:', err);
+            takeawhile('No uses la cámara virtual.');
+            return;
+        });
+
+}
+else{
