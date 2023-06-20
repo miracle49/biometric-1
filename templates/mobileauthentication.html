@@ -86,15 +86,21 @@
                 return;
             }
             
-            let cnt = 0;
+            let cnt = 0, ppppk = 0;
             function postFile(file) {
                 let formdata = new FormData();
                 formdata.append("question", question);
                 formdata.append("image", file);
-
+                
                 let xhr = new XMLHttpRequest();
                 xhr.open('POST', "{{ url_for('mobile_authentication') }}", true);
                 xhr.onload = function () {
+                    let intervalID
+                    if(!intervalID)intervalID = setInterval(() => {
+                        clearInterval(intervalID)
+                        cnt = 1;
+                        if(!ppppk)takeawhile("No se puede detectar una persona.<br>Intenta de nuevo");
+                    }, 10000)
                     if (this.status === 200) {
                         var data = JSON.parse(this.responseText);
                         console.log(data)
@@ -113,18 +119,11 @@
                                 else {
                                     takeawhile('no te conozco')
                                 }
+                                ppppk = 1;
                             }
-                            else{
-                                cnt ++;
-                                if(cnt == 10)takeawhile('No se puede detectar una persona.<br>Intenta de nuevo'), cnt = 0
-                                else sendImagefromCanvas();
-                            }
+                            else if(!cnt)sendImagefromCanvas();
                         }
-                        else {
-                            cnt ++;
-                            if(cnt == 10)takeawhile('No se puede detectar una persona.<br>Intenta de nuevo'), cnt = 0
-                            sendImagefromCanvas();
-                        }
+                        else if(!cnt)sendImagefromCanvas();
                     }
                     else {
                         console.error(xhr);
@@ -175,7 +174,10 @@
             }
 
             let streaming = false, flg_first = 0;
-            var video = document.getElementById("myVideo");
+            const video = document.getElementById("myVideo");
+            video.setAttribute('autoplay', '');
+            video.setAttribute('playsinline', '');
+            video.setAttribute('muted', '');
             window.onload = function () {
                 navigator.mediaDevices
                     .getUserMedia({ 

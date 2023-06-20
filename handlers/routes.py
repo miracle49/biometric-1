@@ -5,7 +5,7 @@ from datetime import timedelta
 from flask import request, session, redirect
 
 from tabledef import *
-from calculator.functions import face_recogtnition_liveness, IDE_PASS_DE_EXT, face_recognition_mobile
+from calculator.functions import face_recogtnition_liveness, IDE_PASS_DE_EXT, face_recognition_mobile, pictureonboard
 from speech_to_text.audio import speech_recog
 
 
@@ -85,6 +85,31 @@ def configure_routes(application, Session):
         data = speech_recog(flask.request)
         return flask.jsonify(data)
 
+    @application.route('/registrobiometrico')
+    def registrobiometrico():
+        return flask.render_template('registrobiometrico.html')
+    
+    @application.route('/registrobiometrico_capture')
+    def registrobiometrico_capture():
+        return flask.render_template('registrobiometrico_capture.html')
+
+    @application.route('/pictureonboarding', methods = ["POST"])
+    def pictureonboarding():
+        data = pictureonboard(flask.request)
+        return flask.jsonify(data)
+
+    @application.route('/registrobiometrico_redirector', methods=["POST"])
+    def registrobiometrico_redirector():
+        if flask.request.method == "POST" and 'name' in request.form and 'email' in request.form and 'token' in request.form and 'ide' in request.form:
+            ide = int(request.form["ide"])
+            if ide > 0:
+                session['logged_in'] = True
+                session['username'] = str(request.form["name"])
+                session['useremail'] = str(request.form["email"])
+                session['useride'] = ide
+                session['rfc'] = str(request.form["RFC"])
+                return registrobiometrico_capture()
+        return registrobiometrico()
     #----------Redirect the App------------#
 
     @application.route('/redirector', methods=["POST"])
