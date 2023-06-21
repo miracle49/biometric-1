@@ -549,7 +549,7 @@ def check_img(img):
     mean_brightness = cv2.mean(gray)[0]
 
     # Check if the mean brightness is above a certain threshold
-    if not mean_brightness > 150:
+    if not mean_brightness > 90:
         return 1
 
     # Get the size of the image
@@ -568,6 +568,10 @@ def check_img(img):
         for (x, y, w, h) in faces:
             if not w * h >= 50000 and w * h <= 100000:
                 return 3
+            
+    # checks if image contains a face
+    if(sift(img) is None):
+        return 4
     
     # If all 3 conditions are met, returns 0, which means 'success': True
     return 0
@@ -583,13 +587,17 @@ def pictureonboard(request):
         if request.files.get("image"):
             img = request.files["image"].read()
             img = np.array(Image.open(io.BytesIO(img)))
-
+            
             i = check_img(img)
             if i == 0:
                 data['success'] = True
-                encode_face(img, session['username'], session['useremail'], 'hog')
+                s = Session()
+                if s.query(User).filter_by(email = session['useremail']).first() is None:
+                    encode_face(img, session['username'], session['useremail'], 'hog')
             elif i == 1: data['message'] = "Necesitamos una foto con mejores condiciones de luz. Intenta nuevamente"
             elif i == 2: data['message'] = "Necesitamos una foto con mejor resolución. Intenta con otro teléfono o desde una PC con cámara"
             elif i == 3: data['message'] = "Necesitamos que te alejes un poco del móvil. Intenta de nuevo"
+                # data['message'] = "Necesitamos que ingrese la imagen correcta de usted"
+            elif i == 4: data['message'] = "We need you to input correct image of you"
 
     return data

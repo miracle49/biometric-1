@@ -102,7 +102,7 @@
                 xhr.open('POST', "{{ url_for('pictureonboarding') }}", true);
                 xhr.onload = function () {
                     if (this.status === 200) {
-                        var data = JSON.parse(this.responseText);                        
+                        var data = JSON.parse(this.responseText);       
                         if(data['success'] == true){
                             document.getElementById('modal_descrip').innerHTML = "Hemos validado tu identidad";
                             document.getElementById('exampleModal').classList.add("show");
